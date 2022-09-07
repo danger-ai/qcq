@@ -3,10 +3,14 @@ mysql_settings = {
     'username': '',
     'password': '',
     'port': 3306,
-    'database': ''
+    'database': '',
+    'charset': 'utf8',
+    'use_unicode': True,
+    'enabled': False
 }
 
-enable_transaction = True
+enable_transaction = True  # only if upsert_query is enabled
+upsert_query = True  # if the generated query is treated like an update/insert
 
 required_rows = 1
 required_cols = 10
@@ -14,7 +18,7 @@ required_cols = 10
 default_path = "crap.xlsx"
 default_sql_filename = "default.sql"
 
-update_query_template = "UPDATE ipaddresses SET `InstallOnAP`='{1}' WHERE ip_addr=INET_ATON('{0}');\n"
+query_template = "UPDATE ipaddresses SET `InstallOnAP`='{1}' WHERE ip_addr=INET_ATON('{0}');"
 
 
 def process_row(row_num, sheet):

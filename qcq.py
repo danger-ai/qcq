@@ -19,9 +19,9 @@ class MySQL:
                            password=cfg.get('password'),
                            database=cfg.get('database'),
                            port=cfg.get('port'),
-                           cursorclass=cur_class,
-                           charset='utf8',
-                           use_unicode=True)
+                           cursorclass=cfg.get('cur_class', cur_class),  # custom cursor classes are allowed
+                           charset=cfg.get('charset'),
+                           use_unicode=cfg.get('use_unicode'))
 
     def __enter__(self):
         self.cur = self.con.cursor(self.cur_class)
@@ -59,44 +59,48 @@ if __name__ == '__main__':
     assert sheet.nrows > qcq_custom.required_rows, "Not enough rows to process."
     assert sheet.ncols > qcq_custom.required_cols, "Not enough columns."
 
-    update_template = qcq_custom.update_query_template
+    query_template = f"{qcq_custom.query_template}\n"
 
-    update_query = ""
+    generated_query = ""
     for r in range(1, sheet.nrows):
-        if update_query == "" and qcq_custom.enable_transaction:
-            update_query = "START TRANSACTION;\n"
+        if generated_query == "" and qcq_custom.upsert_query and qcq_custom.enable_transaction:
+            generated_query = "START TRANSACTION;\n"
         try:
-            update_query += update_template.format(*qcq_custom.process_row(r, sheet))
+            generated_query += query_template.format(*qcq_custom.process_row(r, sheet))
         except:
             if error:
                 print(f'ERROR: Row {r} failed to process.')
 
-    if update_query and not test:
-        if qcq_custom.mysql_settings.get('host') and qcq_custom.mysql_settings.get('username') \
+    if generated_query and not test:
+        if qcq_custom.mysql_settings.get('enabled') is True and \
+                qcq_custom.mysql_settings.get('host') and qcq_custom.mysql_settings.get('username') \
                 and qcq_custom.mysql_settings.get('password') and qcq_custom.mysql_settings.get('port') \
                 and qcq_custom.mysql_settings.get('database'):
             last_q = ""
             try:
                 with MySQL(qcq_custom.mysql_settings) as db:
-                    print("Connected. Updating...")
-                    for r in update_query.split("\n"):
+                    print("Connected. Running generated query...")
+                    for r in generated_query.split("\n"):
                         last_q = r
                         if r:
                             db.cur.execute(r)
-                    print(db.cur.rowcount, "record(s) updated")
+                    if qcq_custom.upsert_query:
+                        print(db.cur.rowcount, "record(s) updated")
             except Exception as ex:
                 if error:
-                    print(f'ERROR: Query {last_q} aborted the update process.')
+                    print(f'ERROR: Query "{last_q}" aborted.')
                 raise ex
         else:
-            print(f'WARNING: Query execution aborted because mysql connection settings are missing.')
-            if not export:
+            if qcq_custom.mysql_settings.get('enabled') is True:
+                print(f'WARNING: Query execution aborted because mysql connection settings are missing.')
+            if not export:  # default to export if there are no mysql connection settings, or if disabled
                 export = qcq_custom.default_sql_filename
     elif test:
-        print(update_query)
+        print(generated_query)
 
     if export:
         print(f"Exporting to {export}...")
         with open(export, 'w') as file:
-            file.write(f'{update_query}{"COMMIT;" if qcq_custom.enable_transaction else ""}')
+            file.write(f'{generated_query}'
+                       f'{"COMMIT;" if qcq_custom.upsert_query and qcq_custom.enable_transaction else ""}')
         print("Done.")

@@ -10,6 +10,9 @@ mysql_settings = {
     'database': ''
 }
 
+required_rows = 1
+required_cols = 10
+
 update_query_template = "UPDATE ipaddresses SET `InstallOnAP`='{1}' WHERE ip_addr=INET_ATON('{0}');\n"
 
 
@@ -64,8 +67,8 @@ if __name__ == '__main__':
     excel_workbook = xlrd.open_workbook(filepath)
     sheet = excel_workbook.sheet_by_index(0)
 
-    assert sheet.nrows > 1, "Not enough rows to process."
-    assert sheet.ncols > 10, "Not enough columns."
+    assert sheet.nrows > required_rows, "Not enough rows to process."
+    assert sheet.ncols > required_cols, "Not enough columns."
 
     ip_column = 2  # Column C
     capacity_column = 11  # Column L

@@ -1,19 +1,7 @@
 import sys
 from MySQLdb import Connect, cursors
 import xlrd
-
-mysql_settings = {
-    'host': '',
-    'username': '',
-    'password': '',
-    'port': 3306,
-    'database': ''
-}
-
-required_rows = 1
-required_cols = 10
-
-update_query_template = "UPDATE ipaddresses SET `InstallOnAP`='{1}' WHERE ip_addr=INET_ATON('{0}');\n"
+import qcq_custom
 
 
 class MySQL:
@@ -67,38 +55,28 @@ if __name__ == '__main__':
     excel_workbook = xlrd.open_workbook(filepath)
     sheet = excel_workbook.sheet_by_index(0)
 
-    assert sheet.nrows > required_rows, "Not enough rows to process."
-    assert sheet.ncols > required_cols, "Not enough columns."
+    assert sheet.nrows > qcq_custom.required_rows, "Not enough rows to process."
+    assert sheet.ncols > qcq_custom.required_cols, "Not enough columns."
 
-    ip_column = 2  # Column C
-    capacity_column = 11  # Column L
-
-    update_template = update_query_template
+    update_template = qcq_custom.update_query_template
 
     update_query = ""
     for r in range(1, sheet.nrows):
-        if update_query == "":
+        if update_query == "" and qcq_custom.enable_transaction:
             update_query = "START TRANSACTION;\n"
         try:
-            cap = int(sheet.cell_value(r, capacity_column))
-            ip = str(sheet.cell_value(r, ip_column))
-            ap_status = "Yes"
-            if cap < -1:
-                ap_status = "No"
-            elif cap < 2:
-                ap_status = "If Approved"
-
-            update_query += update_template.format(ip, ap_status)
+            update_query += update_template.format(*qcq_custom.process_row(r, sheet))
         except:
             if error:
                 print(f'ERROR: Row {r} failed to process.')
 
     if update_query and not test:
-        if mysql_settings.get('host') and mysql_settings.get('username') \
-                and mysql_settings.get('password') and mysql_settings.get('port') and mysql_settings.get('database'):
+        if qcq_custom.mysql_settings.get('host') and qcq_custom.mysql_settings.get('username') \
+                and qcq_custom.mysql_settings.get('password') and qcq_custom.mysql_settings.get('port') \
+                and qcq_custom.mysql_settings.get('database'):
             last_q = ""
             try:
-                with MySQL(mysql_settings) as db:
+                with MySQL(qcq_custom.mysql_settings) as db:
                     print("Connected. Updating...")
                     for r in update_query.split("\n"):
                         last_q = r
@@ -118,4 +96,4 @@ if __name__ == '__main__':
 
     if export:
         with open(export, 'w') as file:
-            file.write(update_query + 'COMMIT;')
+            file.write(f'{update_query}{"COMMIT;" if qcq_custom.enable_transaction else ""}')

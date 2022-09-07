@@ -12,6 +12,7 @@ required_rows = 1
 required_cols = 10
 
 default_path = "crap.xlsx"
+default_sql_filename = "default.sql"
 
 update_query_template = "UPDATE ipaddresses SET `InstallOnAP`='{1}' WHERE ip_addr=INET_ATON('{0}');\n"
 

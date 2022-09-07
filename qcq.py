@@ -91,7 +91,7 @@ if __name__ == '__main__':
         else:
             print(f'WARNING: Query execution aborted because mysql connection settings are missing.')
             if not export:
-                export = "default.sql"
+                export = qcq_custom.default_sql_filename
     elif test:
         print(update_query)
 

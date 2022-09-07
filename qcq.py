@@ -38,8 +38,9 @@ class MySQL:
 
 if __name__ == '__main__':
     print("Quick Crappy Query Generator")
-    assert len(sys.argv) > 1, "File path is required."
-    filepath = sys.argv[1] if len(sys.argv) > 1 else "crap.xlsx"
+    filepath = sys.argv[1] if len(sys.argv) > 1 else qcq_custom.default_path
+
+    assert filepath, "File path is required."
 
     test = '--test' in [str(arg).lower() for arg in sys.argv]
 

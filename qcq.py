@@ -1,7 +1,7 @@
 import sys
 from MySQLdb import Connect, cursors
 import xlrd
-import qcq_custom
+import importlib
 
 
 class MySQL:
@@ -12,14 +12,14 @@ class MySQL:
     cur = None
     cur_class = None
 
-    def __init__(self, cfg, cur_class=cursors.DictCursor):
-        self.cur_class = cur_class
+    def __init__(self, cfg, cur_class=None):
+        self.cur_class = cfg.get('cur_class', cur_class if cur_class else cursors.DictCursor)
         self.con = Connect(host=cfg.get('host'),
                            user=cfg.get('username'),
                            password=cfg.get('password'),
                            database=cfg.get('database'),
                            port=cfg.get('port'),
-                           cursorclass=cfg.get('cur_class', cur_class),  # custom cursor classes are allowed
+                           cursorclass=self.cur_class,  # custom cursor classes are allowed
                            charset=cfg.get('charset'),
                            use_unicode=cfg.get('use_unicode'))
 
@@ -38,9 +38,22 @@ class MySQL:
 
 if __name__ == '__main__':
     print("Quick Crappy Query Generator")
-    filepath = sys.argv[1] if len(sys.argv) > 1 else qcq_custom.default_path
+    module_name = 'qcq_custom'
+    custom_mod = '--mod' in [str(arg).lower() for arg in sys.argv]
 
-    assert filepath, "File path is required."
+    if custom_mod:
+        mod_idx = sys.argv.index('--mod') + 1
+        assert len(sys.argv) >= mod_idx + 1, 'ERROR: Custom Module Name was not specified correctly (ex: --mod pyfile)'
+        module_name = sys.argv[mod_idx]
+        print(f'INFO: Attempting to import "{module_name}" custom module...\n')
+    else:
+        print("INFO: Using default custom module...\n")
+
+    qcq_custom = importlib.import_module(module_name)
+
+    filepath = sys.argv[1] if len(sys.argv) > 1 and '--' not in str(sys.argv[1]) else qcq_custom.default_path
+
+    assert filepath, "ERROR: File path is required and default (input excel file) was not set."
 
     test = '--test' in [str(arg).lower() for arg in sys.argv]
 
@@ -50,14 +63,14 @@ if __name__ == '__main__':
 
     if export:
         idx = sys.argv.index('--export') + 1
-        assert len(sys.argv) >= idx + 1, 'Export File path not specified'
+        assert len(sys.argv) >= idx + 1, 'ERROR: Export File path not specified'
         export = sys.argv[idx]
 
     excel_workbook = xlrd.open_workbook(filepath)
     sheet = excel_workbook.sheet_by_index(0)
 
-    assert sheet.nrows > qcq_custom.required_rows, "Not enough rows to process."
-    assert sheet.ncols > qcq_custom.required_cols, "Not enough columns."
+    assert sheet.nrows > qcq_custom.required_rows, "ERROR: Not enough rows to process."
+    assert sheet.ncols > qcq_custom.required_cols, "ERROR: Not enough columns."
 
     query_template = f"{qcq_custom.query_template}\n"
 

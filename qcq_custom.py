@@ -1,3 +1,9 @@
+"""
+Example currently configured to generate a query based on a list of IPs and capacity values
+
+All the following variables ARE REQUIRED!
+"""
+
 mysql_settings = {
     'host': '',
     'username': '',

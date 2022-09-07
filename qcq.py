@@ -96,5 +96,7 @@ if __name__ == '__main__':
         print(update_query)
 
     if export:
+        print(f"Exporting to {export}...")
         with open(export, 'w') as file:
             file.write(f'{update_query}{"COMMIT;" if qcq_custom.enable_transaction else ""}')
+        print("Done.")

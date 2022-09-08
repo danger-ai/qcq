@@ -44,6 +44,7 @@ if __name__ == '__main__':
     
     Flag/Parameter Details
     --mod: Use this to specify a custom module used for configuration (sloppy patch will likely be depreciated later)
+           qcq_custom is the provided example module
     --export: export when specified, or if the mysql_settings[enabled] == False, then the default export path is used
     --test: generated query is printed to the command line
     --error: show all errors. Used to debug output. 

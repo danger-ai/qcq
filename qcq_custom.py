@@ -24,7 +24,7 @@ required_cols = 10
 default_path = "crap.xlsx"
 default_sql_filename = "default.sql"
 
-query_template = "UPDATE ipaddresses SET `InstallOnAP`='{1}' WHERE ip_addr=INET_ATON('{0}');"
+query_template = "UPDATE ipaddresses SET `custom_field_example`='{1}' WHERE ip_addr=INET_ATON('{0}');"
 
 
 def process_row(row_num, sheet):

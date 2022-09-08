@@ -37,6 +37,17 @@ class MySQL:
 
 
 if __name__ == '__main__':
+    """
+    Quick, Crappy Query Generator
+    
+    Usage: python qcq.py <path/in_file.xls> [--export {default.sql}] [--mod {qcq_custom}] [--test] [--error]
+    
+    Flag/Parameter Details
+    --mod: Use this to specify a custom module used for configuration (sloppy patch will likely be depreciated later)
+    --export: export when specified, or if the mysql_settings[enabled] == False, then the default export path is used
+    --test: generated query is printed to the command line
+    --error: show all errors. Used to debug output. 
+    """
     print("Quick Crappy Query Generator")
     module_name = 'qcq_custom'
     custom_mod = '--mod' in [str(arg).lower() for arg in sys.argv]
@@ -80,9 +91,10 @@ if __name__ == '__main__':
             generated_query = "START TRANSACTION;\n"
         try:
             generated_query += query_template.format(*qcq_custom.process_row(r, sheet))
-        except:
+        except Exception as ex:  # lazy errors currently... will fill this in later
             if error:
                 print(f'ERROR: Row {r} failed to process.')
+                raise ex
 
     if generated_query and not test:
         if qcq_custom.mysql_settings.get('enabled') is True and \
